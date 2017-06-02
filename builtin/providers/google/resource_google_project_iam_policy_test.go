@@ -229,7 +229,7 @@ func TestAccGoogleProjectIamPolicy_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a new project
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGoogleProjectExistingPolicy(pid),
 				),
@@ -237,7 +237,7 @@ func TestAccGoogleProjectIamPolicy_basic(t *testing.T) {
 			// Apply an IAM policy from a data source. The application
 			// merges policies, so we validate the expected state.
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociatePolicyBasic(pid, pname, org),
+				Config: testAccGoogleProjectAssociatePolicyBasic(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectIamPolicyIsMerged("google_project_iam_policy.acceptance", "data.google_iam_policy.admin", pid),
 				),
@@ -245,7 +245,7 @@ func TestAccGoogleProjectIamPolicy_basic(t *testing.T) {
 			// Finally, remove the custom IAM policy from config and apply, then
 			// confirm that the project is in its original state.
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccGoogleProjectExistingPolicy(pid),
 				),
@@ -262,7 +262,7 @@ func TestAccGoogleProjectIamPolicy_expanded(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociatePolicyExpanded(pid, pname, org),
+				Config: testAccGoogleProjectAssociatePolicyExpanded(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectIamPolicyExists("google_project_iam_policy.acceptance", "data.google_iam_policy.expanded", pid),
 				),
@@ -629,12 +629,13 @@ func testAccGoogleProjectExistingPolicy(pid string) resource.TestCheckFunc {
 	}
 }
 
-func testAccGoogleProjectAssociatePolicyBasic(pid, name, org string) string {
+func testAccGoogleProjectAssociatePolicyBasic(pid, name, parentId string, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
+    parent_id = "%s"
+    parent_type = "%s"
 }
 resource "google_project_iam_policy" "acceptance" {
     project = "${google_project.acceptance.id}"
@@ -655,34 +656,37 @@ data "google_iam_policy" "admin" {
     ]
   }
 }
-`, pid, name, org)
+`, pid, name, parentId, parentType)
 }
 
-func testAccGoogleProject_create(pid, name, org string) string {
+func testAccGoogleProject_create(pid, name, parentId, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
-}`, pid, name, org)
+    parent_id = "%s"
+    parent_type = "%s"
+}`, pid, name, parentId, parentType)
 }
 
-func testAccGoogleProject_createBilling(pid, name, org, billing string) string {
+func testAccGoogleProject_createBilling(pid, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
+    parent_id = "%s"
+    parent_type = "%s"
     billing_account = "%s"
-}`, pid, name, org, billing)
+}`, pid, name, parentId, parentType, billing)
 }
 
-func testAccGoogleProjectAssociatePolicyExpanded(pid, name, org string) string {
+func testAccGoogleProjectAssociatePolicyExpanded(pid, name, parentId, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
+    parent_id = "%s"
+    parent_type = "%s"
 }
 resource "google_project_iam_policy" "acceptance" {
     project = "${google_project.acceptance.id}"
@@ -696,12 +700,12 @@ data "google_iam_policy" "expanded" {
             "user:paddy@carvers.co",
         ]
     }
-    
+
     binding {
         role = "roles/viewer"
         members = [
             "user:paddy@hashicorp.com",
         ]
     }
-}`, pid, name, org)
+}`, pid, name, parentId, parentType)
 }

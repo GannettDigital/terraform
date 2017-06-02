@@ -13,8 +13,11 @@ import (
 )
 
 var (
-	org = multiEnvSearch([]string{
-		"GOOGLE_ORG",
+	parentId = multiEnvSearch([]string{
+		"GOOGLE_PARENT_ID",
+	})
+	parentType = multiEnvSearch([]string{
+		"GOOGLE_PARENT_TYPE",
 	})
 
 	pname          = "Terraform Acceptance Tests"
@@ -40,7 +43,7 @@ func TestAccGoogleProject_create(t *testing.T) {
 		Steps: []resource.TestStep{
 			// This step imports an existing project
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 				),
@@ -54,7 +57,8 @@ func TestAccGoogleProject_create(t *testing.T) {
 func TestAccGoogleProject_createBilling(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -67,7 +71,7 @@ func TestAccGoogleProject_createBilling(t *testing.T) {
 		Steps: []resource.TestStep{
 			// This step creates a new project with a billing account
 			resource.TestStep{
-				Config: testAccGoogleProject_createBilling(pid, pname, org, billingId),
+				Config: testAccGoogleProject_createBilling(pid, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectHasBillingAccount("google_project.acceptance", pid, billingId),
 				),
@@ -81,7 +85,8 @@ func TestAccGoogleProject_createBilling(t *testing.T) {
 func TestAccGoogleProject_updateBilling(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 			"GOOGLE_BILLING_ACCOUNT_2",
 		}...,
@@ -96,21 +101,21 @@ func TestAccGoogleProject_updateBilling(t *testing.T) {
 		Steps: []resource.TestStep{
 			// This step creates a new project without a billing account
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 				),
 			},
 			// Update to include a billing account
 			resource.TestStep{
-				Config: testAccGoogleProject_createBilling(pid, pname, org, billingId),
+				Config: testAccGoogleProject_createBilling(pid, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectHasBillingAccount("google_project.acceptance", pid, billingId),
 				),
 			},
 			// Update to a different  billing account
 			resource.TestStep{
-				Config: testAccGoogleProject_createBilling(pid, pname, org, billingId2),
+				Config: testAccGoogleProject_createBilling(pid, pname, parentId, parentType, billingId2),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectHasBillingAccount("google_project.acceptance", pid, billingId2),
 				),
@@ -129,7 +134,7 @@ func TestAccGoogleProject_merge(t *testing.T) {
 		Steps: []resource.TestStep{
 			// when policy_data is set, merge
 			{
-				Config: testAccGoogleProject_toMerge(pid, pname, org),
+				Config: testAccGoogleProject_toMerge(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 					testAccCheckGoogleProjectHasMoreBindingsThan(pid, 1),
@@ -137,7 +142,7 @@ func TestAccGoogleProject_merge(t *testing.T) {
 			},
 			// when policy_data is unset, restore to what it was
 			{
-				Config: testAccGoogleProject_mergeEmpty(pid, pname, org),
+				Config: testAccGoogleProject_mergeEmpty(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 					testAccCheckGoogleProjectHasMoreBindingsThan(pid, 0),
@@ -205,12 +210,13 @@ func testAccCheckGoogleProjectHasMoreBindingsThan(pid string, count int) resourc
 	}
 }
 
-func testAccGoogleProject_toMerge(pid, name, org string) string {
+func testAccGoogleProject_toMerge(pid, name, parentId, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
+    parent_id = "%s"
+    parent_type = "%s"
 }
 
 resource "google_project_iam_policy" "acceptance" {
@@ -225,16 +231,17 @@ data "google_iam_policy" "acceptance" {
 	  "user:evanbrown@google.com",
 	]
     }
-}`, pid, name, org)
+}`, pid, name, parentId, parentType)
 }
 
-func testAccGoogleProject_mergeEmpty(pid, name, org string) string {
+func testAccGoogleProject_mergeEmpty(pid, name, parentId, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
     project_id = "%s"
     name = "%s"
-    org_id = "%s"
-}`, pid, name, org)
+    parent_id = "%s"
+    parent_type = "%s"
+}`, pid, name, parentId, parentType)
 }
 
 func skipIfEnvNotSet(t *testing.T, envs ...string) {

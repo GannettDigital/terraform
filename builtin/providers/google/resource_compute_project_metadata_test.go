@@ -15,7 +15,8 @@ import (
 func TestAccComputeProjectMetadata_basic(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -30,7 +31,7 @@ func TestAccComputeProjectMetadata_basic(t *testing.T) {
 		CheckDestroy: testAccCheckComputeProjectMetadataDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccComputeProject_basic0_metadata(projectID, pname, org, billingId),
+				Config: testAccComputeProject_basic0_metadata(projectID, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeProjectExists(
 						"google_compute_project_metadata.fizzbuzz", projectID, &project),
@@ -47,7 +48,8 @@ func TestAccComputeProjectMetadata_basic(t *testing.T) {
 func TestAccComputeProjectMetadata_modify_1(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -62,7 +64,7 @@ func TestAccComputeProjectMetadata_modify_1(t *testing.T) {
 		CheckDestroy: testAccCheckComputeProjectMetadataDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccComputeProject_modify0_metadata(projectID, pname, org, billingId),
+				Config: testAccComputeProject_modify0_metadata(projectID, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeProjectExists(
 						"google_compute_project_metadata.fizzbuzz", projectID, &project),
@@ -74,7 +76,7 @@ func TestAccComputeProjectMetadata_modify_1(t *testing.T) {
 			},
 
 			resource.TestStep{
-				Config: testAccComputeProject_modify1_metadata(projectID, pname, org, billingId),
+				Config: testAccComputeProject_modify1_metadata(projectID, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeProjectExists(
 						"google_compute_project_metadata.fizzbuzz", projectID, &project),
@@ -92,7 +94,8 @@ func TestAccComputeProjectMetadata_modify_1(t *testing.T) {
 func TestAccComputeProjectMetadata_modify_2(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -107,7 +110,7 @@ func TestAccComputeProjectMetadata_modify_2(t *testing.T) {
 		CheckDestroy: testAccCheckComputeProjectMetadataDestroy,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccComputeProject_basic0_metadata(projectID, pname, org, billingId),
+				Config: testAccComputeProject_basic0_metadata(projectID, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeProjectExists(
 						"google_compute_project_metadata.fizzbuzz", projectID, &project),
@@ -118,7 +121,7 @@ func TestAccComputeProjectMetadata_modify_2(t *testing.T) {
 			},
 
 			resource.TestStep{
-				Config: testAccComputeProject_basic1_metadata(projectID, pname, org, billingId),
+				Config: testAccComputeProject_basic1_metadata(projectID, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckComputeProjectExists(
 						"google_compute_project_metadata.fizzbuzz", projectID, &project),
@@ -216,12 +219,13 @@ func testAccCheckComputeProjectMetadataSize(projectID string, size int) resource
 	}
 }
 
-func testAccComputeProject_basic0_metadata(projectID, name, org, billing string) string {
+func testAccComputeProject_basic0_metadata(projectID, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "project" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+	parent_type = "%s"
   billing_account = "%s"
 }
 
@@ -237,15 +241,16 @@ resource "google_compute_project_metadata" "fizzbuzz" {
     sofa = "darwinism"
   }
   depends_on = ["google_project_services.services"]
-}`, projectID, name, org, billing)
+}`, projectID, name, parentId, parentType, billing)
 }
 
-func testAccComputeProject_basic1_metadata(projectID, name, org, billing string) string {
+func testAccComputeProject_basic1_metadata(projectID, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "project" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+	parent_type = "%s"
   billing_account = "%s"
 }
 
@@ -261,15 +266,16 @@ resource "google_compute_project_metadata" "fizzbuzz" {
     finches = "darwinism"
   }
   depends_on = ["google_project_services.services"]
-}`, projectID, name, org, billing)
+}`, projectID, name, parentId, parentType, billing)
 }
 
-func testAccComputeProject_modify0_metadata(projectID, name, org, billing string) string {
+func testAccComputeProject_modify0_metadata(projectID, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "project" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+	parent_type = "%s"
   billing_account = "%s"
 }
 
@@ -286,15 +292,16 @@ resource "google_compute_project_metadata" "fizzbuzz" {
     happy = "smiling"
   }
   depends_on = ["google_project_services.services"]
-}`, projectID, name, org, billing)
+}`, projectID, name, parentId, parentType, billing)
 }
 
-func testAccComputeProject_modify1_metadata(projectID, name, org, billing string) string {
+func testAccComputeProject_modify1_metadata(projectID, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "project" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+	parent_type = "%s"
   billing_account = "%s"
 }
 
@@ -311,5 +318,5 @@ resource "google_compute_project_metadata" "fizzbuzz" {
     happy = "laughing"
   }
   depends_on = ["google_project_services.services"]
-}`, projectID, name, org, billing)
+}`, projectID, name, parentId, parentType, billing)
 }

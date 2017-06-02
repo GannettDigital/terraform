@@ -52,8 +52,27 @@ func resourceGoogleProject() *schema.Resource {
 			},
 			"org_id": &schema.Schema{
 				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+				Removed:  "The org_id field has been removed. Use parent_id and parent_type instead.",
+			},
+			"parent_id": &schema.Schema{
+				Type:     schema.TypeString,
 				Required: true,
 				ForceNew: true,
+			},
+			"parent_type": &schema.Schema{
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
+				ValidateFunc: func(v interface{}, k string) (ws []string, errors []error) {
+					value := v.(string)
+					if (value != "organization") && (value != "folder") {
+						errors = append(errors, fmt.Errorf(
+							"%q must be set to \"organization\" or \"folder\"", k))
+					}
+					return
+				},
 			},
 			"policy_data": &schema.Schema{
 				Type:     schema.TypeString,
@@ -90,8 +109,8 @@ func resourceGoogleProjectCreate(d *schema.ResourceData, meta interface{}) error
 		ProjectId: pid,
 		Name:      d.Get("name").(string),
 		Parent: &cloudresourcemanager.ResourceId{
-			Id:   d.Get("org_id").(string),
-			Type: "organization",
+			Id:   d.Get("parent_id").(string),
+			Type: d.Get("parent_type").(string),
 		},
 	}
 
@@ -144,7 +163,8 @@ func resourceGoogleProjectRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("name", p.Name)
 
 	if p.Parent != nil {
-		d.Set("org_id", p.Parent.Id)
+		d.Set("parent_id", p.Parent.Id)
+		d.Set("parent_type", p.Parent.Type)
 	}
 
 	// Read the billing account
