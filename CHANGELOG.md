@@ -1,3 +1,13 @@
+## 0.9.6-gci-1 (June 1, 2017)
+
+BACKWARDS INCOMPATIBILITIES / NOTES:
+
+The google_project resource no longer uses the org_id property. Instead use the parent_id and parent_type properties.
+
+IMPROVEMENTS:
+
+* provider/google: Add support for folders to the google_project resource.
+
 ## 0.9.6 (May 25, 2017)
 
 BACKWARDS INCOMPATIBILITIES / NOTES:
