@@ -27,14 +27,14 @@ func TestAccGoogleProjectServices_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a new project with some services
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociateServicesBasic(services1, pid, pname, org),
+				Config: testAccGoogleProjectAssociateServicesBasic(services1, pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services1, pid),
 				),
 			},
 			// Update services to remove one
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociateServicesBasic(services2, pid, pname, org),
+				Config: testAccGoogleProjectAssociateServicesBasic(services2, pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services2, pid),
 				),
@@ -45,7 +45,7 @@ func TestAccGoogleProjectServices_basic(t *testing.T) {
 					config := testAccProvider.Meta().(*Config)
 					enableService(oobService, pid, config)
 				},
-				Config: testAccGoogleProjectAssociateServicesBasic(services2, pid, pname, org),
+				Config: testAccGoogleProjectAssociateServicesBasic(services2, pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services2, pid),
 				),
@@ -66,7 +66,7 @@ func TestAccGoogleProjectServices_authoritative(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a new project with no services
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 				),
@@ -78,7 +78,7 @@ func TestAccGoogleProjectServices_authoritative(t *testing.T) {
 					config := testAccProvider.Meta().(*Config)
 					enableService(oobService, pid, config)
 				},
-				Config: testAccGoogleProjectAssociateServicesBasic(services, pid, pname, org),
+				Config: testAccGoogleProjectAssociateServicesBasic(services, pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services, pid),
 				),
@@ -101,7 +101,7 @@ func TestAccGoogleProjectServices_authoritative2(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create a new project with no services
 			resource.TestStep{
-				Config: testAccGoogleProject_create(pid, pname, org),
+				Config: testAccGoogleProject_create(pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckGoogleProjectExists("google_project.acceptance", pid),
 				),
@@ -115,7 +115,7 @@ func TestAccGoogleProjectServices_authoritative2(t *testing.T) {
 						enableService(s, pid, config)
 					}
 				},
-				Config: testAccGoogleProjectAssociateServicesBasic(services, pid, pname, org),
+				Config: testAccGoogleProjectAssociateServicesBasic(services, pid, pname, parentId, parentType),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services, pid),
 				),
@@ -130,7 +130,8 @@ func TestAccGoogleProjectServices_authoritative2(t *testing.T) {
 func TestAccGoogleProjectServices_ignoreUnenablableServices(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -157,7 +158,7 @@ func TestAccGoogleProjectServices_ignoreUnenablableServices(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociateServicesBasic_withBilling(services, pid, pname, org, billingId),
+				Config: testAccGoogleProjectAssociateServicesBasic_withBilling(services, pid, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services, pid),
 				),
@@ -169,7 +170,8 @@ func TestAccGoogleProjectServices_ignoreUnenablableServices(t *testing.T) {
 func TestAccGoogleProjectServices_manyServices(t *testing.T) {
 	skipIfEnvNotSet(t,
 		[]string{
-			"GOOGLE_ORG",
+			"GOOGLE_PARENT_ID",
+			"GOOGLE_PARENT_TYPE",
 			"GOOGLE_BILLING_ACCOUNT",
 		}...,
 	)
@@ -212,7 +214,7 @@ func TestAccGoogleProjectServices_manyServices(t *testing.T) {
 		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			resource.TestStep{
-				Config: testAccGoogleProjectAssociateServicesBasic_withBilling(services, pid, pname, org, billingId),
+				Config: testAccGoogleProjectAssociateServicesBasic_withBilling(services, pid, pname, parentId, parentType, billingId),
 				Check: resource.ComposeTestCheckFunc(
 					testProjectServicesMatch(services, pid),
 				),
@@ -221,33 +223,35 @@ func TestAccGoogleProjectServices_manyServices(t *testing.T) {
 	})
 }
 
-func testAccGoogleProjectAssociateServicesBasic(services []string, pid, name, org string) string {
+func testAccGoogleProjectAssociateServicesBasic(services []string, pid, name, parentId, parentType string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+  parent_type = "%s"
 }
 resource "google_project_services" "acceptance" {
   project = "${google_project.acceptance.project_id}"
   services = [%s]
 }
-`, pid, name, org, testStringsToString(services))
+`, pid, name, parentId, parentType, testStringsToString(services))
 }
 
-func testAccGoogleProjectAssociateServicesBasic_withBilling(services []string, pid, name, org, billing string) string {
+func testAccGoogleProjectAssociateServicesBasic_withBilling(services []string, pid, name, parentId, parentType, billing string) string {
 	return fmt.Sprintf(`
 resource "google_project" "acceptance" {
   project_id = "%s"
   name = "%s"
-  org_id = "%s"
+  parent_id = "%s"
+  parent_type = "%s"
   billing_account = "%s"
 }
 resource "google_project_services" "acceptance" {
   project = "${google_project.acceptance.project_id}"
   services = [%s]
 }
-`, pid, name, org, billing, testStringsToString(services))
+`, pid, name, parentId, parentType, billing, testStringsToString(services))
 }
 
 func testProjectServicesMatch(services []string, pid string) resource.TestCheckFunc {
